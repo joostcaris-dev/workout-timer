@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hoogtekamer">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#050505">
+<title>Hoogtekamer</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root{
+  --bg:#050505; --fg:#f4f1ea; --card:#0e0d0b; --muted:#9a8f78; --line:#3a3224; --gold-lt:#fbe0a0; --gold:#c9ad6e; --gold-dk:#8a7648;
+  --goldbtn:linear-gradient(110deg,#8a7648,#f5dc9c 45%,#c9ad6e 70%,#8a7648);
+  --warm:#f5c518; --warm-fg:#2a2200; --work:#1fa84f; --work-fg:#ffffff; --rest:#d93636; --rest-fg:#ffffff;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{ height:100%; scroll-padding-top:env(safe-area-inset-top,0px); color-scheme:dark; }
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body{ margin:0; height:100%; background:var(--bg); color:var(--fg);
+  font-family:"Arial Narrow","Helvetica Neue",system-ui,-apple-system,sans-serif;
+  transition:background .25s,color .25s; user-select:none; -webkit-user-select:none; overflow:hidden; }
+body.warm{ background:var(--warm); color:var(--warm-fg); }
+body.work{ background:var(--work); color:var(--work-fg); }
+body.rest{ background:var(--rest); color:var(--rest-fg); }
+[hidden]{ display:none !important; }
+main{ height:100%; display:flex; flex-direction:column; padding:20px; max-width:520px; margin:0 auto; }
+button{ font-family:inherit; }
+
+.head{ display:flex; align-items:center; gap:14px; margin:6px 0 18px; }
+.ring{ width:46px; height:46px; border-radius:50%; flex:none; background:radial-gradient(circle,#050505 0 50%,#fff 51% 57%,transparent 58%),var(--goldbtn); }
+h1{ margin:0; font-size:34px; font-weight:900; letter-spacing:.02em; background:linear-gradient(100deg,#a8925e,#fbe0a0 50%,#a8925e); -webkit-background-clip:text; background-clip:text; color:transparent; }
+h2{ margin:0 0 14px; font-size:24px; font-weight:800; color:var(--gold-lt); }
+.scroll{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-bottom:12px; }
+.empty{ color:var(--muted); font-size:17px; padding:12px 2px; }
+
+.card{ display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 12px 12px 14px; }
+.play{ width:54px; height:54px; border-radius:50%; border:0; flex:none; background:radial-gradient(circle,#050505 0 52%,#fff 53% 58%,transparent 59%),var(--goldbtn); color:var(--gold-lt); font-size:18px; padding:0 0 0 3px; }
+.card .txt{ flex:1; min-width:0; text-align:left; background:none; border:0; color:var(--fg); padding:6px 0; }
+.card .nm{ font-size:22px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+.card .sm{ font-size:14px; color:var(--muted); margin-top:3px; display:block; }
+.edit{ background:none; border:1px solid var(--line); border-radius:12px; color:var(--gold); font-size:15px; font-weight:700; height:44px; padding:0 14px; }
+
+.go{ width:100%; height:68px; border:0; border-radius:18px; background:var(--goldbtn); color:#0a0a09; font-size:22px; font-weight:900; letter-spacing:.02em; margin-top:6px; flex:none; }
+.go:active,.play:active{ transform:scale(.97); }
+.ghost{ width:100%; height:56px; border-radius:16px; background:none; border:1px solid var(--line); color:var(--fg); font-size:18px; font-weight:700; margin-top:10px; flex:none; }
+.danger{ color:#ff7a7a; }
+.stars{ text-align:center; color:var(--gold); letter-spacing:.6em; font-size:12px; margin:14px 0 4px; flex:none; }
+
+.namebox{ width:100%; height:56px; border-radius:14px; border:1px solid var(--line); background:var(--card); color:var(--fg); font-size:20px; font-weight:700; padding:0 14px; margin-bottom:10px; font-family:inherit; user-select:text; -webkit-user-select:text; }
+.namebox:focus{ outline:2px solid var(--gold); }
+.row{ display:flex; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px 10px 10px 14px; margin-bottom:10px; }
+.row .name{ font-size:17px; font-weight:700; display:flex; align-items:center; gap:10px; }
+.dot{ width:12px; height:12px; border-radius:50%; }
+.ctl{ display:flex; align-items:center; gap:6px; }
+.ctl button{ width:44px; height:48px; border-radius:14px; border:1px solid var(--line); background:#1a1814; color:var(--gold-lt); font-size:26px; font-weight:700; }
+.ctl button:active{ transform:scale(.94); }
+.ctl .val{ width:88px; height:48px; text-align:center; font-size:24px; font-weight:900; font-family:inherit; color:var(--fg); background:transparent; border:0; border-bottom:2px dotted var(--gold-dk); border-radius:0; padding:0; font-variant-numeric:tabular-nums; user-select:text; -webkit-user-select:text; }
+.ctl .val:focus{ outline:none; border-bottom-color:var(--gold-lt); background:#1a1814; }
+.total{ color:var(--muted); font-size:15px; margin:4px 2px 10px; }
+
+#run{ text-align:center; }
+.wname{ font-size:16px; font-weight:700; opacity:.7; margin-top:6px; }
+.phase{ font-size:clamp(30px,9vw,48px); font-weight:900; margin-top:10px; }
+.time{ flex:1; display:flex; align-items:center; justify-content:center; font-size:min(54vw,42vh); font-weight:900; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.03em; }
+.info{ font-size:22px; font-weight:700; opacity:.85; margin-bottom:6px; }
+.next{ font-size:15px; font-weight:600; opacity:.7; margin-bottom:18px; min-height:20px; }
+.btns{ display:flex; gap:12px; margin-bottom:10px; }
+.btns button{ flex:1; height:68px; border-radius:20px; border:2px solid currentColor; background:transparent; color:inherit; font-size:18px; font-weight:800; }
+.btns button:active{ opacity:.6; }
+.bar{ height:8px; border-radius:4px; background:rgba(128,128,128,.3); margin-bottom:16px; overflow:hidden; }
+.bar i{ display:block; height:100%; width:0; background:currentColor; }
+body.done #time{ color:var(--gold-lt); }
+</style>
+</head>
+<body>
+
+<main id="list">
+  <div class="head"><div class="ring"></div><h1>Hoogtekamer</h1></div>
+  <div class="scroll" id="cards"></div>
+  <button class="go" id="new">Nieuwe training</button>
+  <div class="stars">★★★★★</div>
+</main>
+
+<main id="edit" hidden>
+  <h2 id="etitle">Training</h2>
+  <input class="namebox" id="ename" type="text" placeholder="Naam van de training" maxlength="40" autocomplete="off">
+  <div class="row"><div class="name"><span class="dot" style="background:var(--warm)"></span>Warming-up</div><div class="ctl"><button data-k="warm" data-d="-5" aria-label="Warming-up korter">−</button><input class="val" id="v-warm" type="text" autocomplete="off" aria-label="Tijd warming-up"><button data-k="warm" data-d="5" aria-label="Warming-up langer">+</button></div></div>
+  <div class="row"><div class="name"><span class="dot" style="background:var(--work)"></span>Rondes</div><div class="ctl"><button data-k="rounds" data-d="-1" aria-label="Minder rondes">−</button><input class="val" id="v-rounds" type="text" inputmode="numeric" autocomplete="off" aria-label="Aantal rondes"><button data-k="rounds" data-d="1" aria-label="Meer rondes">+</button></div></div>
+  <div class="row"><div class="name"><span class="dot" style="background:var(--work)"></span>Trainen</div><div class="ctl"><button data-k="work" data-d="-5" aria-label="Trainen korter">−</button><input class="val" id="v-work" type="text" autocomplete="off" aria-label="Tijd trainen"><button data-k="work" data-d="5" aria-label="Trainen langer">+</button></div></div>
+  <div class="row"><div class="name"><span class="dot" style="background:var(--rest)"></span>Rust</div><div class="ctl"><button data-k="rest" data-d="-5" aria-label="Rust korter">−</button><input class="val" id="v-rest" type="text" autocomplete="off" aria-label="Tijd rust"><button data-k="rest" data-d="5" aria-label="Rust langer">+</button></div></div>
+  <p class="total" id="total"></p>
+  <p class="total" id="hint">Typ een tijd: 30, 1:30 of 10 min. Een los getal telt als seconden.</p>
+  <div style="flex:1"></div>
+  <button class="go" id="save">Opslaan</button>
+  <button class="ghost" id="cancel">Annuleren</button>
+  <button class="ghost danger" id="del" hidden>Verwijderen</button>
+</main>
+
+<main id="run" hidden>
+  <div class="wname" id="wname"></div>
+  <div class="phase" id="phase"></div>
+  <div class="time" id="time">0</div>
+  <div class="info" id="info"></div>
+  <div class="next" id="next"></div>
+  <div class="bar"><i id="fill"></i></div>
+  <div class="btns"><button id="pause">Pauze</button><button id="skip">Volgende</button><button id="stop">Stop</button></div>
+</main>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var LIM = { warm:[0,3600], rounds:[1,99], work:[5,3600], rest:[0,3600] };
+  var KEY = 'hoogtekamer-trainingen';
+  var list = null;
+  try { var raw = localStorage.getItem(KEY); if (raw) list = JSON.parse(raw); } catch(e){}
+  var PRESETS = [
+    { id:'p1', fixed:true, name:'60 × 30 sec', warm:120, rounds:60, work:30, rest:10 },
+    { id:'p2', fixed:true, name:'16 × 2:30', warm:120, rounds:16, work:150, rest:30 }
+  ];
+  if (!Array.isArray(list)) list = [{ id:'t1', name:'Eigen training', warm:10, rounds:8, work:20, rest:10 }];
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(list)); } catch(e){} }
+
+  function screen(id){ ['list','edit','run'].forEach(function(s){ $(s).hidden = (s !== id); }); }
+  function fmt(s){ if (s >= 60) { var m = Math.floor(s/60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; } return String(s); }
+  function lab(s){ if (s < 60) return s + 's'; var m = Math.floor(s/60), r = s % 60; return m + ' min' + (r ? ' ' + r + 's' : ''); }
+  function parseTime(str){
+    str = String(str).trim().toLowerCase().replace(',', '.');
+    var c = str.match(/^(\d+):(\d{1,2})$/); if (c) return +c[1] * 60 + +c[2];
+    var mm = str.match(/(\d+(?:\.\d+)?)\s*(?:min|m)/), ss = str.match(/(\d+(?:\.\d+)?)\s*(?:sec|s)/);
+    if (mm || ss) return Math.round((mm ? +mm[1] * 60 : 0) + (ss ? +ss[1] : 0));
+    if (/^\d+(\.\d+)?$/.test(str)) return Math.round(+str);
+    return NaN;
+  }
+  function summary(w){ return (w.warm > 0 ? lab(w.warm) + ' warming-up · ' : '') + w.rounds + ' × ' + lab(w.work) + (w.rest > 0 ? ' / ' + lab(w.rest) + ' rust' : ''); }
+  function totalSec(w){ return w.warm + w.rounds * w.work + Math.max(0, w.rounds - 1) * w.rest; }
+
+  /* list */
+  function renderList(){
+    var box = $('cards'); box.innerHTML = '';
+    if (!list.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Nog geen trainingen. Maak je eerste training aan.'; box.appendChild(e); }
+    PRESETS.concat(list).forEach(function(w){
+      var c = document.createElement('div'); c.className = 'card';
+      var p = document.createElement('button'); p.className = 'play'; p.textContent = '▶'; p.setAttribute('aria-label', 'Start ' + w.name);
+      var t = document.createElement('button'); t.className = 'txt';
+      var n = document.createElement('span'); n.className = 'nm'; n.textContent = w.name;
+      var s = document.createElement('span'); s.className = 'sm'; s.textContent = summary(w);
+      t.appendChild(n); t.appendChild(s);
+      var ed = document.createElement('button'); ed.className = 'edit'; ed.textContent = 'Wijzig';
+      p.onclick = t.onclick = function(){ begin(w); };
+      ed.onclick = function(){ openEdit(w); };
+      c.appendChild(p); c.appendChild(t); if (!w.fixed) c.appendChild(ed); box.appendChild(c);
+    });
+  }
+
+  /* editor */
+  var E = null, delArmed = false;
+  function renderEdit(){
+    $('v-warm').value = lab(E.warm); $('v-rounds').value = E.rounds;
+    $('v-work').value = lab(E.work); $('v-rest').value = lab(E.rest);
+    $('total').textContent = 'Totaal: ' + lab(totalSec(E));
+  }
+  function openEdit(w){
+    E = w ? { id:w.id, name:w.name, warm:w.warm, rounds:w.rounds, work:w.work, rest:w.rest } : { id:null, name:'', warm:10, rounds:8, work:20, rest:10 };
+    $('etitle').textContent = w ? 'Training wijzigen' : 'Nieuwe training';
+    $('ename').value = E.name; $('del').hidden = !w; delArmed = false; $('del').textContent = 'Verwijderen';
+    renderEdit(); screen('edit');
+  }
+  document.querySelectorAll('.ctl button').forEach(function(b){
+    b.addEventListener('click', function(){
+      var k = b.dataset.k, d = +b.dataset.d;
+      E[k] = Math.min(LIM[k][1], Math.max(LIM[k][0], E[k] + d)); renderEdit();
+    });
+  });
+  function commit(k){
+    var el = $('v-' + k), v = (k === 'rounds') ? parseInt(el.value, 10) : parseTime(el.value);
+    if (isNaN(v)) v = E[k];
+    E[k] = Math.min(LIM[k][1], Math.max(LIM[k][0], v)); renderEdit();
+  }
+  ['warm','rounds','work','rest'].forEach(function(k){
+    var el = $('v-' + k);
+    el.addEventListener('change', function(){ commit(k); });
+    el.addEventListener('focus', function(){ setTimeout(function(){ el.select(); }, 0); });
+    el.addEventListener('keydown', function(e){ if (e.key === 'Enter') el.blur(); });
+  });
+  $('new').onclick = function(){ openEdit(null); };
+  $('cancel').onclick = function(){ screen('list'); };
+  $('save').onclick = function(){
+    ['warm','rounds','work','rest'].forEach(commit);
+    E.name = $('ename').value.trim() || 'Training ' + (list.length + 1);
+    if (E.id) { list = list.map(function(w){ return w.id === E.id ? E : w; }); }
+    else { E.id = 't' + Date.now(); list.push(E); }
+    save(); renderList(); screen('list');
+  };
+  $('del').onclick = function(){
+    if (!delArmed) { delArmed = true; $('del').textContent = 'Zeker weten? Tik nogmaals'; return; }
+    list = list.filter(function(w){ return w.id !== E.id; }); save(); renderList(); screen('list');
+  };
+
+  /* audio */
+  var ctx = null, keep = null;
+  function silentWav(){
+    var n = 8000, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+    function w(o, s){ for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+    w(0,'RIFF'); v.setUint32(4, 36 + n, true); w(8,'WAVEfmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,8000,true); v.setUint32(28,8000,true); v.setUint16(32,1,true); v.setUint16(34,8,true); w(36,'data'); v.setUint32(40,n,true);
+    for (var i = 0; i < n; i++) v.setUint8(44 + i, 128);
+    var bin = '', bytes = new Uint8Array(buf);
+    for (var j = 0; j < bytes.length; j++) bin += String.fromCharCode(bytes[j]);
+    return 'data:audio/wav;base64,' + btoa(bin);
+  }
+  function initAudio(){
+    try { if (!ctx) { var AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); } if (ctx.state !== 'running') ctx.resume(); } catch(e){}
+    try { if (!keep) { keep = new Audio(silentWav()); keep.loop = true; keep.setAttribute('playsinline',''); } keep.play().catch(function(){}); } catch(e){}
+  }
+  function beep(freq, dur, vol){
+    if (!ctx) return;
+    try {
+      var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+      g.gain.setValueAtTime(vol, t + dur - 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + dur + 0.02);
+    } catch(e){}
+  }
+  var shortBeep = function(){ beep(880, 0.2, 0.5); };
+  var startBeep = function(){ beep(1320, 0.7, 0.6); };
+
+  var lock = null;
+  function wake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function(l){ lock = l; }).catch(function(){}); } catch(e){} }
+  function unwake(){ try { if (lock) lock.release(); } catch(e){} lock = null; }
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && running) wake(); });
+
+  /* timer */
+  var NAMES = { warm:'Warming-up', work:'Trainen', rest:'Rust' };
+  var W = null, phases = [], idx = 0, endAt = 0, remAtPause = 0, running = false, paused = false, lastBeep = -1, timer = null;
+
+  function build(){
+    phases = [];
+    if (W.warm > 0) phases.push({ t:'warm', d:W.warm, r:0 });
+    for (var i = 1; i <= W.rounds; i++) {
+      phases.push({ t:'work', d:W.work, r:i });
+      if (W.rest > 0 && i < W.rounds) phases.push({ t:'rest', d:W.rest, r:i });
+    }
+  }
+  function setPhase(){
+    var p = phases[idx];
+    document.body.className = p.t;
+    $('phase').textContent = NAMES[p.t];
+    $('info').textContent = p.r ? 'Ronde ' + p.r + ' van ' + W.rounds : 'Ronde 1 begint zo';
+    var nx = phases[idx + 1];
+    $('next').textContent = nx ? 'Straks: ' + NAMES[nx.t].toLowerCase() + ' · ' + lab(nx.d) : 'Laatste ronde';
+    lastBeep = -1;
+    if (p.t === 'work' || p.t === 'rest') startBeep();
+  }
+  function show(rem){
+    var s = Math.max(0, Math.ceil(rem / 1000 - 0.0005));
+    $('time').textContent = fmt(s);
+    var p = phases[idx];
+    $('fill').style.width = (100 * (1 - Math.min(1, rem / (p.d * 1000)))) + '%';
+    if (s >= 1 && s <= 3 && s !== lastBeep) { lastBeep = s; shortBeep(); }
+  }
+  function tick(){
+    if (!running || paused) return;
+    var now = performance.now(), rem = endAt - now;
+    if (rem <= 0) {
+      if (idx >= phases.length - 1) { finish(); return; }
+      var carry = rem; idx++; setPhase();
+      endAt = now + phases[idx].d * 1000 + carry; rem = endAt - now;
+    }
+    show(rem);
+  }
+  function begin(w){
+    W = w; initAudio(); wake(); build();
+    idx = 0; running = true; paused = false;
+    screen('run'); $('wname').textContent = W.name; $('pause').textContent = 'Pauze'; delete $('pause').dataset.done;
+    setPhase();
+    endAt = performance.now() + phases[0].d * 1000;
+    show(phases[0].d * 1000);
+    clearInterval(timer); timer = setInterval(tick, 100);
+  }
+  function finish(){
+    running = false; clearInterval(timer); unwake();
+    document.body.className = 'done';
+    $('phase').textContent = 'Klaar'; $('time').textContent = '✓';
+    $('info').textContent = W.rounds + ' rondes gedaan'; $('next').textContent = '';
+    $('fill').style.width = '100%'; $('pause').textContent = 'Opnieuw'; $('pause').dataset.done = '1';
+    beep(660, 0.25, 0.5); setTimeout(function(){ beep(880, 0.25, 0.5); }, 280); setTimeout(function(){ beep(1320, 0.6, 0.5); }, 560);
+  }
+  function stop(){
+    running = false; paused = false; clearInterval(timer); unwake();
+    document.body.className = ''; screen('list');
+  }
+  function skip(){
+    if (!running) return;
+    initAudio();
+    if (idx >= phases.length - 1) { finish(); return; }
+    idx++; setPhase();
+    remAtPause = phases[idx].d * 1000;
+    endAt = performance.now() + remAtPause;
+    show(remAtPause);
+  }
+  $('skip').onclick = skip;
+  $('stop').onclick = stop;
+  $('pause').onclick = function(){
+    if ($('pause').dataset.done) { begin(W); return; }
+    if (!running) return;
+    initAudio();
+    if (!paused) { paused = true; remAtPause = endAt - performance.now(); $('pause').textContent = 'Verder'; }
+    else { paused = false; endAt = performance.now() + remAtPause; $('pause').textContent = 'Pauze'; }
+  };
+
+  renderList(); screen('list');
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+</script>
+</body>
+</html>
