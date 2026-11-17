@@ -270,8 +270,7 @@ body.done #time{ color:var(--gold-lt); }
     $('time').textContent = fmt(s);
     var p = phases[idx];
     $('fill').style.width = (100 * (1 - Math.min(1, rem / (p.d * 1000)))) + '%';
-    var el = p.d * 1000 - rem;
-    $('cheer').classList.toggle('on', p.t === 'rest' || (p.t === 'work' && p.r % 2 === 0 && p.d >= 10 && el >= p.d * 500 && el < p.d * 500 + 3000));
+    $('cheer').classList.toggle('on', p.t === 'rest' || p.t === 'work');
     if (s >= 1 && s <= 3 && s !== lastBeep) { lastBeep = s; shortBeep(); }
   }
   function tick(){
