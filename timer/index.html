@@ -64,16 +64,20 @@ h2{ margin:0 0 14px; font-size:24px; font-weight:800; color:var(--gold-lt); }
 .total{ color:var(--muted); font-size:15px; margin:4px 2px 10px; }
 
 #run{ text-align:center; }
+.cheer{ font-size:clamp(22px,6.5vw,34px); font-weight:900; font-style:italic; text-transform:uppercase; letter-spacing:.02em; line-height:1.15; text-align:center; margin-top:6px; opacity:0; transform:translateY(6px); transition:opacity .35s,transform .35s; }
+.cheer.on{ opacity:1; transform:none; }
+.cheer:empty{ display:none; }
 .wname{ font-size:16px; font-weight:700; opacity:.7; margin-top:6px; }
 .phase{ font-size:clamp(30px,9vw,48px); font-weight:900; margin-top:10px; }
 .time{ flex:1; display:flex; align-items:center; justify-content:center; font-size:min(54vw,42vh); font-weight:900; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.03em; }
-.info{ font-size:22px; font-weight:700; opacity:.85; margin-bottom:6px; }
+.info{ font-size:40px; font-weight:900; font-variant-numeric:tabular-nums; margin-bottom:8px; }
 .next{ font-size:15px; font-weight:600; opacity:.7; margin-bottom:18px; min-height:20px; }
 .btns{ display:flex; gap:12px; margin-bottom:10px; }
 .btns button{ flex:1; height:68px; border-radius:20px; border:2px solid currentColor; background:transparent; color:inherit; font-size:18px; font-weight:800; }
 .btns button:active{ opacity:.6; }
-.bar{ height:8px; border-radius:4px; background:rgba(128,128,128,.3); margin-bottom:16px; overflow:hidden; }
-.bar i{ display:block; height:100%; width:0; background:currentColor; }
+.segs{ display:flex; gap:2px; height:10px; margin-bottom:14px; }
+.segs i{ flex:1; border-radius:2px; background:currentColor; opacity:.3; }
+.segs i.f{ opacity:1; }
 body.done #time{ color:var(--gold-lt); }
 </style>
 </head>
@@ -104,10 +108,11 @@ body.done #time{ color:var(--gold-lt); }
 <main id="run" hidden>
   <div class="wname" id="wname"></div>
   <div class="phase" id="phase"></div>
+  <div class="cheer" id="cheer"></div>
   <div class="time" id="time">0</div>
   <div class="info" id="info"></div>
   <div class="next" id="next"></div>
-  <div class="bar"><i id="fill"></i></div>
+  <div class="segs" id="segs"></div>
   <div class="btns"><button id="pause">Pauze</button><button id="skip">Volgende</button><button id="stop">Stop</button></div>
 </main>
 
@@ -237,7 +242,7 @@ body.done #time{ color:var(--gold-lt); }
 
   /* timer */
   var NAMES = { warm:'Warming-up', work:'Trainen', rest:'Rust' };
-  var W = null, phases = [], idx = 0, endAt = 0, remAtPause = 0, running = false, paused = false, lastBeep = -1, timer = null;
+  var W = null, HALF = 0, phases = [], idx = 0, endAt = 0, remAtPause = 0, running = false, paused = false, lastBeep = -1, timer = null;
 
   function build(){
     phases = [];
@@ -247,21 +252,24 @@ body.done #time{ color:var(--gold-lt); }
       if (W.rest > 0 && i < W.rounds) phases.push({ t:'rest', d:W.rest, r:i });
     }
   }
+  function fillSegs(n){ var k = $('segs').children; for (var i = 0; i < k.length; i++) k[i].className = i < n ? 'f' : ''; }
   function setPhase(){
     var p = phases[idx];
     document.body.className = p.t;
     $('phase').textContent = NAMES[p.t];
-    $('info').textContent = p.r ? 'Ronde ' + p.r + ' van ' + W.rounds : 'Ronde 1 begint zo';
+    $('info').textContent = p.r + ' / ' + W.rounds; fillSegs(p.r);
     var nx = phases[idx + 1];
     $('next').textContent = nx ? 'Straks: ' + NAMES[nx.t].toLowerCase() + ' · ' + lab(nx.d) : 'Laatste ronde';
     lastBeep = -1;
+    $('cheer').textContent = (p.t === 'work' && p.r === HALF) ? 'Half way there, Let\u2019s GO! \ud83d\udcaa' : '';
+    $('cheer').classList.remove('on');
     if (p.t === 'work' || p.t === 'rest') startBeep();
   }
   function show(rem){
     var s = Math.max(0, Math.ceil(rem / 1000 - 0.0005));
     $('time').textContent = fmt(s);
     var p = phases[idx];
-    $('fill').style.width = (100 * (1 - Math.min(1, rem / (p.d * 1000)))) + '%';
+    $('cheer').classList.toggle('on', p.t === 'work' && p.r === HALF);
     if (s >= 1 && s <= 3 && s !== lastBeep) { lastBeep = s; shortBeep(); }
   }
   function tick(){
@@ -276,6 +284,8 @@ body.done #time{ color:var(--gold-lt); }
   }
   function begin(w){
     W = w; initAudio(); wake(); build();
+    HALF = W.rounds >= 2 ? Math.floor(W.rounds / 2) + 1 : 0;
+    var sg = $('segs'); sg.innerHTML = ''; for (var q = 0; q < W.rounds; q++) sg.appendChild(document.createElement('i'));
     idx = 0; running = true; paused = false;
     screen('run'); $('wname').textContent = W.name; $('pause').textContent = 'Pauze'; delete $('pause').dataset.done;
     setPhase();
@@ -288,7 +298,7 @@ body.done #time{ color:var(--gold-lt); }
     document.body.className = 'done';
     $('phase').textContent = 'Klaar'; $('time').textContent = '✓';
     $('info').textContent = W.rounds + ' rondes gedaan'; $('next').textContent = '';
-    $('fill').style.width = '100%'; $('pause').textContent = 'Opnieuw'; $('pause').dataset.done = '1';
+    fillSegs(W.rounds); $('cheer').classList.remove('on'); $('pause').textContent = 'Opnieuw'; $('pause').dataset.done = '1';
     beep(660, 0.25, 0.5); setTimeout(function(){ beep(880, 0.25, 0.5); }, 280); setTimeout(function(){ beep(1320, 0.6, 0.5); }, 560);
   }
   function stop(){
